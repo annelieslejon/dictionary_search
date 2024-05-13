@@ -269,10 +269,11 @@ startButton.addEventListener("click", () => {
 
 function search() {
     spinner.classList.remove("visually-hidden");
-
+    debugger;
     // Send the keypoint data to the server and get a response back...
     fetch('http://localhost:5500/search?' + new URLSearchParams({
             gtgloss: id_glosses[currentGlossIndex],
+            id_gloss: currentGlossIndex
         }), { method: "POST", body: clipLandmarks, headers: {'CONSENT': true} })
         .then(response => {
             if (response.ok) {

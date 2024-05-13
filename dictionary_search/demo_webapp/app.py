@@ -8,9 +8,9 @@ import numpy as np
 from dictionary_search_model import Model
 from flask import Flask, request, Response
 from flask.json import jsonify
-from flask_cors import CORS
 from werkzeug.utils import redirect
 import search_engine
+from db_models import app
 from flask_restx import Api, Resource
 parser = argparse.ArgumentParser()
 parser.add_argument('model_path', type=str,
@@ -22,10 +22,8 @@ args = parser.parse_args()
 
 model: Model = Model(args.model_path)
 database: search_engine.SearchEngine = search_engine.SearchEngine(args.db_path, args.max_entries)
-
-app = Flask(__name__, static_url_path='', static_folder='frontend')
-CORS(app)
-
+number_of_scores_tostore = 10
+number_of_items_toreturn = 5
 
 @app.route('/')
 def index():
@@ -35,18 +33,29 @@ def index():
 
 
 
+
+
+
+@app.route('/create_session')
+def create_session():
+    session_id = str(uuid.uuid4())  # Generate a unique session id
+    return session_id
+
+
 @app.route("/search", methods=['post'])
 def search() -> Response:
+
     keypoints = np.fromstring(request.data, dtype=float, sep=',')
     features = keypoints.reshape((-1, 543, 3))
 
     embedding: np.ndarray = model.get_embedding(features)
     random_embeddings = model.get_embedding(model.get_random_input(features))
 
-    search_results: List[Tuple[str, float]] = database.get_results(embedding, random_embeddings)
+    search_results: List[Tuple[str, int, float, float]] = database.get_results(embedding, random_embeddings)
 
     unique_filename: uuid.UUID = uuid.uuid4()
     np.save(os.path.join(args.data_store, str(unique_filename)), features)
+
 
     with open(os.path.join(args.data_store, str(unique_filename) + '.json'), 'w') as metadata_file:
         json.dump({'ground_truth': request.args.get('gtgloss'),
@@ -55,8 +64,8 @@ def search() -> Response:
 
     # Return search results.
     response: Dict[str, List[str]] = {
-        "results": [result[0] for result in search_results[:9]]
-        # Only return 9 glosses to the UI, which can only display 9 anyway.
+        "results": [result[0] for result in search_results[:5]]
+        # Only return 9 glosses to the UI, which can only display 5 anyway.
     }
 
     response: Response = jsonify(response)

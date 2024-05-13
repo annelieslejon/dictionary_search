@@ -62,6 +62,7 @@ class SearchEngine:
             self.database.append(DatabaseEntry(np.load(db_entry), label))
 
 
+
     def get_results(self, embedding: np.ndarray,random_embedding) -> List[Tuple[str, float]]:
         """Perform a search. Return a maximum number of results.
 
@@ -72,16 +73,14 @@ class SearchEngine:
         distances_random = []
         for i, key in enumerate(self.database):
             eucdist = np.linalg.norm(embedding - key.embedding)
-            eucdist_rand = np.linalg.norm(random_embedding-key.embedding)
-            scaled_dist = (eucdist_rand - eucdist)/eucdist_rand
+
+
 
             distances.append((eucdist, i))
-            scaled_distances.append((scaled_dist,i))
-            distances_random.append((eucdist_rand, i))
         ordered = sorted(distances, key=lambda tup: tup[0])
-        ordered_scaled = sorted(scaled_distances, key=lambda tup : tup[0])#Sort by ascending distance.
-        ordered_random = sorted(distances_random, key=lambda tup: tup[0])
-        results = [(self.database[i].gloss, float(d)) for d, i in ordered]
+        scores = np.random.rand(len(ordered))
+
+        results = [(self.database[i].gloss, i, float(d)) for s,(d, i) in zip(scores,ordered)]
 
 
         return results
