@@ -4,12 +4,22 @@ from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 import os
 from flask_cors import CORS
-
+from config import DevelopmentConfig, ProductionConfig
+from datetime import datetime
 app = Flask(__name__, static_url_path='', static_folder='frontend')
 CORS(app)
 
+
+env = os.getenv('FLASK_ENV', 'development') 
+if env == 'production':
+    app.config.from_object(ProductionConfig)
+else:
+    app.config.from_object(DevelopmentConfig)
+
+
+
 # Configure the SQLAlchemy part of the app instance
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+#app.config['SQLALCHEMY_DATABASE_URI'] =  app.config.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
@@ -24,26 +34,33 @@ class Session(db.Model):
 class Gloss(db.Model):
     __tablename__ = 'glosses'
     id = db.Column(db.Integer, primary_key=True)
-    gloss_name = db.Column(db.String(), nullable=False)
+    #gloss_name = db.Column(db.String(), nullable=False)
     gloss_full = db.Column(db.String(), nullable=False)
 
 
 
 class Video(db.Model):
-    __tablename__ = 'videos'
+    __tablename__ = 'keypoints'
     id = db.Column(db.Integer, primary_key=True)
-    gloss_id = db.Column(db.Integer, db.ForeignKey('glosses.id'), nullable=False)
+    gloss_name= db.Column(db.Integer, db.ForeignKey('glosses.gloss_full'), nullable=False)
+    gloss_id = db.Column(db.Integer, db.ForeignKey('glosses.id'))
     session_id = db.Column(db.Integer, db.ForeignKey('sessions.id'), nullable=False)
-    frames = db.Column(db.Integer, nullable=False)
-    keypoints = db.Column(db.Text)
+    signknowledge = db.Column(db.Integer)
+    results = db.Column(db.Text)
     scores = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    frames = db.Column(db.Integer)
+    filename = db.Column(db.Text)
 
 class Feedback(db.Model):
-    __tablename__ = "Feedback"
+    __tablename__ = "feedback"
     id = db.Column(db.Integer, primary_key=True)
-    video_id = db.Column(db.Integer, db.ForeignKey('videos.id'), nullable=False)
+    feedback_gloss_name = db.Column(db.Text)
     session_id = db.Column(db.Integer, db.ForeignKey('sessions.id'), nullable=False)
-    feedback = db.Column(db.Text, nullable=False)
+    answers = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 
 
